@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RuLz CeLL v69 - Debt & Installment Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary: #1e40af; --accent: #f59e0b; --service: #0891b2; --danger: #ef4444; --success: #10b981; }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+        .header-app { background: linear-gradient(135deg, #0f172a, #1e40af); color: white; padding: 15px 0; border-bottom: 4px solid var(--accent); }
+        .total-summary { background: #fff; border-left: 6px solid var(--danger); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .summary-val { font-size: 28px; font-weight: 900; color: #1e293b; display: block; }
+        .chip-box { padding: 10px 2px; border-radius: 12px; color: white; min-height: 85px; text-align: center; font-weight: bold; position: relative; margin-bottom: 5px; }
+        .chip-box div[id^="sd-"] { font-size: 13px; margin: 4px 0; font-weight: 800; cursor: pointer; text-decoration: underline dotted; }
+        .bg-xl { background: #1d4ed8; } .bg-isat { background: #ea580c; } .bg-tsel { background: #dc2626; } .bg-multi { background: #1e293b; } .bg-bank { background: #059669; }
+        .btn-action { background: rgba(255,255,255,0.3); border: none; color: white; border-radius: 6px; padding: 2px 8px; font-size: 10px; }
+        .nav-pills .nav-link { font-size: 10px; font-weight: 800; padding: 10px 4px; color: #475569; background: #e2e8f0; border-radius: 10px; }
+        .nav-pills .nav-link.active { background-color: var(--primary); color: white; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; position: relative; }
+        .scroll-area { max-height: 350px; overflow-y: auto; }
+        .laba-box { font-weight: bold; border-radius: 12px; padding: 10px; color: white; text-align: center; }
+        .bg-l-minggu { background: #3b82f6; } .bg-l-bulan { background: #8b5cf6; }
+        .pay-method { font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: bold; }
+        .m-cash { background: #dcfce7; color: #166534; } .m-credit { background: #fee2e2; color: #991b1b; } .m-cicil { background: #fef9c3; color: #854d0e; }
+        .btn-xs { padding: 1px 5px; font-size: 9px; }
+    </style>
+</head>
+<body>
+
+<div class="header-app text-center mb-3">
+    <h3 class="fw-bold m-0">📱 RuLz CeLL <small class="fs-6 opacity-75">v69 PAYMENTS</small></h3>
+</div>
+
+<div class="container pb-5">
+    <div class="total-summary shadow text-center">
+        <span class="text-muted fw-bold small">SALDO AKHIR KESELURUHAN</span>
+        <span id="grandTotalSaldo" class="summary-val text-danger">Rp 0</span>
+    </div>
+
+    <div class="row gx-1 mb-4 text-center">
+        <div class="col"><div class="chip-box bg-xl shadow-sm">XL<div id="sd-XL" onclick="editSaldoDirect('XL')">0</div><button class="btn-action" onclick="topUp('XL')">+</button></div></div>
+        <div class="col"><div class="chip-box bg-isat shadow-sm">ISAT<div id="sd-ISAT" onclick="editSaldoDirect('ISAT')">0</div><button class="btn-action" onclick="topUp('ISAT')">+</button></div></div>
+        <div class="col"><div class="chip-box bg-tsel shadow-sm">TSEL<div id="sd-TSEL" onclick="editSaldoDirect('TSEL')">0</div><button class="btn-action" onclick="topUp('TSEL')">+</button></div></div>
+        <div class="col"><div class="chip-box bg-multi shadow-sm">MULTI<div id="sd-MULTI" onclick="editSaldoDirect('MULTI')">0</div><button class="btn-action" onclick="topUp('MULTI')">+</button></div></div>
+        <div class="col"><div class="chip-box bg-bank shadow-sm">BANK<div id="sd-BANK" onclick="editSaldoDirect('BANK')">0</div><button class="btn-action" onclick="topUp('BANK')">+</button></div></div>
+    </div>
+
+    <ul class="nav nav-pills mb-4 d-flex gap-1" id="mainTab">
+        <li class="nav-item flex-fill"><button class="nav-link active w-100" data-bs-toggle="tab" data-bs-target="#tab-kasir">KASIR</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-hutang">💳 HUTANG</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-belanja">🛒 BELANJA</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-service">SERVICE</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-master">PROD</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-laba">LABA</button></li>
+        <li class="nav-item flex-fill"><button class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-tools">📁</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-kasir">
+            <div class="card p-3" id="cardKasir">
+                <form id="formTransaksi" class="row g-2">
+                    <input type="hidden" id="editTrIdx" value="">
+                    <div class="col-8"><select id="inpProduk" class="form-select form-select-sm" onchange="toggleManualPrice()" required></select></div>
+                    <div class="col-4"><input type="date" id="trTgl" class="form-control form-control-sm" required></div>
+                    <div id="areaManual" class="col-12" style="display:none;">
+                        <div class="row g-2">
+                            <div class="col-6"><input type="number" id="manualBeli" class="form-control form-control-sm border-warning" placeholder="Modal"></div>
+                            <div class="col-6"><input type="number" id="manualJual" class="form-control form-control-sm border-warning" placeholder="Jual"></div>
+                        </div>
+                    </div>
+                    <div class="col-12"><input type="text" id="inpTujuan" class="form-control form-control-sm" placeholder="Nama Pelanggan/No HP" required></div>
+                    <div class="col-12"><select id="inpMetode" class="form-select form-select-sm border-primary fw-bold" required>
+                        <option value="CASH">BAYAR: CASH</option>
+                        <option value="CREDIT">BAYAR: CREDIT (PIUTANG)</option>
+                        <option value="CICIL">BAYAR: CICIL</option>
+                    </select></div>
+                    <div class="col-12 d-flex gap-2 mt-1">
+                        <button type="submit" id="btnSubmitTr" class="btn btn-primary flex-grow-1 fw-bold">SIMPAN TRANSAKSI</button>
+                        <button type="button" id="btnCancelTr" class="btn btn-secondary btn-sm" style="display:none;" onclick="resetFormTr()">BATAL</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card scroll-area"><table class="table table-sm mb-0"><tbody id="listTransaksi"></tbody></table></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-hutang">
+            <div class="row g-2 mb-3">
+                <div class="col-6"><div class="laba-box bg-danger">Total Piutang<br><span id="totalPiutang">0</span></div></div>
+                <div class="col-6"><div class="laba-box bg-dark">Total Hutang<br><span id="totalHutang">0</span></div></div>
+            </div>
+            <div class="card p-3 mb-3">
+                <h6 class="fw-bold mb-2">Tambah Catatan Manual</h6>
+                <form id="formHutang" class="row g-2">
+                    <div class="col-6"><input type="text" id="hNama" class="form-control form-control-sm" placeholder="Nama Orang" required></div>
+                    <div class="col-6"><select id="hJenis" class="form-select form-select-sm"><option value="PIUTANG">SAYA DIPINJAM (PIUTANG)</option><option value="HUTANG">SAYA PINJAM (HUTANG)</option></select></div>
+                    <div class="col-12"><input type="text" id="hKet" class="form-control form-control-sm" placeholder="Keterangan"></div>
+                    <div class="col-8"><input type="number" id="hNominal" class="form-control form-control-sm" placeholder="Nominal Rp" required></div>
+                    <div class="col-4"><button type="submit" class="btn btn-dark btn-sm w-100 fw-bold">SIMPAN</button></div>
+                </form>
+            </div>
+            <div class="card scroll-area">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light"><tr><th>Nama / Ket</th><th class="text-end">Sisa Tagihan</th></tr></thead>
+                    <tbody id="listHutang"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-belanja">
+            <div class="card p-3" id="cardBelanja">
+                <h6 class="fw-bold mb-3 text-center">ISI STOK KONTER</h6>
+                <form id="formBelanjaBarang" class="row g-2">
+                    <div class="col-12"><select id="bljProduk" class="form-select form-select-sm border-success" required></select></div>
+                    <div class="col-6">
+                        <label class="small fw-bold">Jumlah Beli</label>
+                        <input type="number" id="bljQty" class="form-control form-control-sm" placeholder="0" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="small fw-bold">Sumber Dana</label>
+                        <select id="bljSumber" class="form-select form-select-sm">
+                            <option value="BANK">SALDO BANK</option>
+                            <option value="MULTI">SALDO MULTI</option>
+                            <option value="CASH">UANG TUNAI (KAS)</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="small fw-bold">Total Harga Belanja</label>
+                        <input type="number" id="bljTotal" class="form-control form-control-sm border-danger" placeholder="Rp 0" required>
+                    </div>
+                    <div class="col-12 d-flex gap-2 mt-2">
+                        <button type="submit" class="btn btn-success flex-grow-1 fw-bold">UPDATE STOK</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card scroll-area"><table class="table table-sm mb-0"><tbody id="listBelanjaHistory"></tbody></table></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-master">
+            <div class="card p-3" id="cardMaster">
+                <form id="formProduk" class="row g-2">
+                    <input type="hidden" id="editPrIdx" value="">
+                    <div class="col-12"><input type="text" id="pNama" class="form-control form-control-sm" placeholder="Nama Produk" required></div>
+                    
+                    <div class="col-8">
+                        <select id="pKat" class="form-select form-select-sm" onchange="checkKat(this)" required></select>
+                    </div>
+                    <div class="col-4 d-flex gap-1">
+                        <button type="button" class="btn btn-warning btn-sm flex-fill" onclick="editKatAktif()" title="Edit Nama Kategori">✎</button>
+                        <button type="button" class="btn btn-danger btn-sm flex-fill" onclick="hapusKatAktif()" title="Hapus Kategori">×</button>
+                    </div>
+                    <div class="col-6"><select id="pSumber" class="form-select form-select-sm">
+                        <option value="XL">XL</option><option value="ISAT">ISAT</option><option value="TSEL">TSEL</option><option value="MULTI">MULTI</option><option value="BANK">BANK</option><option value="GEN">UMUM</option>
+                    </select></div>
+                    <div class="col-6"><input type="number" id="pStok" class="form-control form-control-sm border-primary" placeholder="Stok" required></div>
+                    <div class="col-6"><input type="number" id="pBeli" class="form-control form-control-sm" placeholder="Modal" required></div>
+                    <div class="col-6"><input type="number" id="pJual" class="form-control form-control-sm" placeholder="Jual" required></div>
+                    <div class="col-12"><input type="checkbox" id="pIsManual"> <label for="pIsManual" class="text-danger fw-bold">HARGA BEBAS</label></div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" id="btnSubmitPr" class="btn btn-dark flex-grow-1 fw-bold">SIMPAN PRODUK</button>
+                        <button type="button" id="btnCancelPr" class="btn btn-secondary btn-sm" style="display:none;" onclick="resetFormPr()">BATAL</button>
+                    </div>
+                </form>
+            </div>
+            <div class="px-2 mb-2"><input type="text" id="searchPr" class="form-control form-control-sm border-primary" placeholder="🔍 Cari nama produk..." onkeyup="filterMaster()"></div>
+            <div class="card scroll-area"><table class="table table-sm mb-0"><tbody id="listMaster"></tbody></table></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-service">
+            <div class="card p-3"><form id="formService" class="row g-2">
+                <div class="col-7"><input type="text" id="svNama" class="form-control form-control-sm" placeholder="Pelanggan"></div>
+                <div class="col-5"><input type="date" id="svTgl" class="form-control form-control-sm"></div>
+                <div class="col-12"><input type="text" id="svUnit" class="form-control form-control-sm" placeholder="Unit HP"></div>
+                <div class="col-12"><input type="text" id="svRusak" class="form-control form-control-sm" placeholder="Kerusakan"></div>
+                <div class="col-6"><input type="number" id="svBeli" class="form-control form-control-sm" placeholder="Modal Part"></div>
+                <div class="col-6"><input type="number" id="svJual" class="form-control form-control-sm" placeholder="Biaya"></div>
+                <button type="submit" class="btn btn-info text-white w-100 fw-bold mt-2">SIMPAN SERVICE</button>
+            </form></div>
+            <div class="card scroll-area"><table class="table table-sm mb-0"><tbody id="listService"></tbody></table></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-laba">
+            <div class="row g-2 mb-3">
+                <div class="col-6"><div class="laba-box bg-l-minggu">Mingguan<br><span id="labaM">0</span></div></div>
+                <div class="col-6"><div class="laba-box bg-l-bulan">Bulanan<br><span id="labaB">0</span></div></div>
+            </div>
+            <div class="card p-2 scroll-area" id="listLabaDetil"></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-tools">
+            <div class="card p-4 text-center">
+                <button class="btn btn-success w-100 mb-2 fw-bold" onclick="exportToExcel()">📤 EXPORT DATA</button>
+                <div class="border p-2 rounded mb-2"><input type="file" id="importFile" class="form-control form-control-sm" accept=".xlsx"></div>
+                <button class="btn btn-danger w-100 mb-4 fw-bold" onclick="importFromExcel()">📥 IMPORT DATA</button>
+                <hr>
+                <button class="btn btn-outline-danger btn-sm" onclick="if(confirm('Hapus semua data?')) {localStorage.clear(); location.reload();}">RESET DATABASE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DB_V = 'v69_';
+    const keys = { TR: DB_V+'tr', PR: DB_V+'pr', KT: DB_V+'kt', SV: DB_V+'sv', BL: DB_V+'bl', HT: DB_V+'ht' };
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwFNG9pkH-WbYCNNb1GauNNKYZxXCgXcjxTR10T9vWrMjpKawQJy4fO6INoZHUmZyq/exec";
+
+    let dataTR = JSON.parse(localStorage.getItem(keys.TR)) || [];
+    let dataPR = JSON.parse(localStorage.getItem(keys.PR)) || [];
+    let dataSV = JSON.parse(localStorage.getItem(keys.SV)) || [];
+    let dataBL = JSON.parse(localStorage.getItem(keys.BL)) || [];
+    let dataHT = JSON.parse(localStorage.getItem(keys.HT)) || []; 
+    let dataKT = JSON.parse(localStorage.getItem(keys.KT)) || ["PULSA", "KUOTA", "AKSESORIS"];
+
+    function refresh() {
+        let sisaStok = {}; 
+        dataPR.forEach(p => sisaStok[p.id] = parseInt(p.stok) || 0);
+        dataTR.forEach(t => { if(sisaStok[t.prodID] !== undefined) sisaStok[t.prodID] -= 1; });
+        dataBL.forEach(b => { if(sisaStok[b.prodID] !== undefined) sisaStok[b.prodID] += parseInt(b.qty); });
+
+        let s = { 
+            XL: parseInt(localStorage.getItem(DB_V+'S_XL'))||0, 
+            ISAT: parseInt(localStorage.getItem(DB_V+'S_ISAT'))||0, 
+            TSEL: parseInt(localStorage.getItem(DB_V+'S_TSEL'))||0, 
+            MULTI: parseInt(localStorage.getItem(DB_V+'S_MULTI'))||0,
+            BANK: parseInt(localStorage.getItem(DB_V+'S_BANK'))||0 
+        };
+        dataTR.forEach(t => { if(s[t.sumber] !== undefined) s[t.sumber] -= parseInt(t.beli); });
+        dataBL.forEach(b => { if(s[b.sumber] !== undefined) s[b.sumber] -= parseInt(b.total); });
+
+        document.getElementById('formTransaksi').onsubmit = async (e) => {
+    e.preventDefault();
+    const p = dataPR.find(x => x.id == document.getElementById('inpProduk').value);
+    
+    const obj = { 
+        prodID: p.id, 
+        item: p.nama, 
+        sumber: p.sumber, 
+        beli: p.isManual ? parseInt(document.getElementById('manualBeli').value) : p.beli, 
+        jual: p.isManual ? parseInt(document.getElementById('manualJual').value) : p.jual, 
+        tujuan: document.getElementById('inpTujuan').value, 
+        metode: document.getElementById('inpMetode').value, 
+        date: document.getElementById('trTgl').value 
+    };
+
+    // Kirim ke Google Sheets
+    try {
+        await fetch(SCRIPT_URL + "?sheet=Transaksi", {
+            method: "POST",
+            body: JSON.stringify(obj)
+        });
+        alert("Data berhasil tersimpan di Google Sheets!");
+    } catch (err) {
+        console.error("Gagal mengirim ke Sheets", err);
+    }
+
+    // Tetap simpan di LocalStorage sebagai cadangan
+    dataTR.push(obj); 
+    resetFormTr(); refresh();
+};
+
+        // Kategori Dropdown (Pembaruan Logika)
+        const pKat = document.getElementById('pKat');
+        pKat.innerHTML = '<option value="">-- KATEGORI --</option>';
+        dataKT.forEach(k => pKat.innerHTML += `<option value="${k}">${k}</option>`);
+        pKat.innerHTML += `<option value="NEW" style="color:blue; font-weight:bold;">+ TAMBAH BARU</option>`;
+
+        // Dropdown Produk
+        const selK = document.getElementById('inpProduk');
+        const selB = document.getElementById('bljProduk');
+        selK.innerHTML = '<option value="">-- PILIH PRODUK --</option>';
+        selB.innerHTML = '<option value="">-- PILIH BARANG --</option>';
+        dataKT.forEach(k => {
+            let gK = document.createElement('optgroup'); gK.label = k;
+            let gB = document.createElement('optgroup'); gB.label = k;
+            dataPR.filter(p => p.kat === k).forEach(p => {
+                let opt = document.createElement('option'); opt.value = p.id;
+                opt.text = `${p.nama} (Sisa: ${sisaStok[p.id]})`;
+                if(sisaStok[p.id] <= 0) opt.disabled = true;
+                gK.appendChild(opt);
+                let optB = document.createElement('option'); optB.value = p.id;
+                optB.text = p.nama;
+                gB.appendChild(optB);
+            });
+            if(gK.children.length > 0) selK.appendChild(gK);
+            if(gB.children.length > 0) selB.appendChild(gB);
+        });
+
+        // List Transaksi
+        const lt = document.getElementById('listTransaksi'); lt.innerHTML = '';
+        [...dataTR].reverse().slice(0,15).forEach((t, i) => {
+            let idx = dataTR.length - 1 - i;
+            let mClass = t.metode === 'CREDIT' ? 'm-credit' : (t.metode === 'CICIL' ? 'm-cicil' : 'm-cash');
+            lt.innerHTML += `<tr><td class="ps-2"><b>${t.item}</b> <span class="pay-method ${mClass}">${t.metode || 'CASH'}</span><br><small>${t.tujuan}</small></td><td class="text-end pe-2">Rp${t.jual.toLocaleString()}<br><span onclick="loadTr(${idx})" class="text-primary me-2" style="cursor:pointer">✎</span><span class="text-danger" onclick="hapus('TR',${idx})" style="cursor:pointer">×</span></td></tr>`;
+        });
+
+        // List Hutang
+        const lh = document.getElementById('listHutang'); lh.innerHTML = '';
+        let totalP = 0, totalH = 0;
+        let allHutang = [];
+        dataHT.forEach((h, i) => { allHutang.push({...h, type: 'MANUAL', originIdx: i}); });
+        dataTR.forEach((t, i) => { if((t.metode === 'CREDIT' || t.metode === 'CICIL') && parseInt(t.jual) > 0) allHutang.push({ nama: t.tujuan, nominal: t.jual, jenis: 'PIUTANG', ket: t.item, type: 'AUTO', originIdx: i }); });
+        allHutang.forEach((h, i) => {
+            if(h.jenis === 'PIUTANG') totalP += parseInt(h.nominal); else totalH += parseInt(h.nominal);
+            lh.innerHTML += `<tr><td class="ps-2"><b>${h.nama}</b><br><small>${h.ket || 'Manual'}</small></td><td class="text-end pe-2 ${h.jenis==='PIUTANG'?'text-danger':'text-dark'} fw-bold">Rp${parseInt(h.nominal).toLocaleString()}<br><button class="btn btn-success btn-xs py-0" onclick="bayarDirect(${i})">BAYAR</button></td></tr>`;
+        });
+        window.tempHutangList = allHutang;
+        document.getElementById('totalPiutang').innerText = "Rp " + totalP.toLocaleString();
+        document.getElementById('totalHutang').innerText = "Rp " + totalH.toLocaleString();
+
+        // List Belanja History
+        const lbh = document.getElementById('listBelanjaHistory'); lbh.innerHTML = '';
+        [...dataBL].reverse().slice(0,10).forEach((b, i) => {
+            let idx = dataBL.length - 1 - i;
+            lbh.innerHTML += `<tr><td class="ps-2"><b>${b.item}</b> (x${b.qty})<br><small>${b.sumber}</small></td><td class="text-end pe-2">Rp${parseInt(b.total).toLocaleString()}<br><span class="text-danger" onclick="hapus('BL',${idx})" style="cursor:pointer">×</span></td></tr>`;
+        });
+
+        // List Service
+        const ls = document.getElementById('listService'); ls.innerHTML = '';
+        [...dataSV].reverse().forEach((s, i) => {
+            let idx = dataSV.length - 1 - i;
+            ls.innerHTML += `<tr><td class="ps-2"><b>${s.unit}</b><br><small>${s.nama}</small></td><td class="text-end pe-2">Rp${parseInt(s.jual).toLocaleString()}<br><span class="text-danger" onclick="hapus('SV',${idx})" style="cursor:pointer">×</span></td></tr>`;
+        });
+
+        // Master Produk
+        const lm = document.getElementById('listMaster'); lm.innerHTML = '';
+        dataPR.forEach((p, i) => { lm.innerHTML += `<tr><td class="ps-2"><b>${p.nama}</b><br><small>Stok: ${sisaStok[p.id]}</small></td><td class="text-end pe-2">Rp${parseInt(p.jual).toLocaleString()}<br><span onclick="loadPr(${i})" class="text-primary me-2" style="cursor:pointer">✎</span><span onclick="hapus('PR',${i})" class="text-danger" style="cursor:pointer">×</span></td></tr>`; });
+
+        save(); calcLaba();
+    }
+
+    // FUNGSI EDIT & HAPUS KATEGORI BARU
+    function editKatAktif() {
+        let sel = document.getElementById('pKat');
+        let oldVal = sel.value;
+        if(!oldVal || oldVal === "NEW") { alert("Pilih kategori yang ingin diedit!"); return; }
+        
+        let newVal = prompt("Ubah nama kategori '" + oldVal + "' menjadi:", oldVal);
+        if(newVal && newVal !== oldVal) {
+            newVal = newVal.toUpperCase();
+            // Update daftar kategori
+            let idx = dataKT.indexOf(oldVal);
+            if(idx !== -1) dataKT[idx] = newVal;
+            
+            // Update semua produk yang pakai kategori ini
+            dataPR.forEach(p => { if(p.kat === oldVal) p.kat = newVal; });
+            
+            refresh();
+            sel.value = newVal;
+            alert("Kategori berhasil diperbarui!");
+        }
+    }
+
+    function hapusKatAktif() {
+        let sel = document.getElementById('pKat');
+        let val = sel.value;
+        if(!val || val === "NEW") { alert("Pilih kategori yang ingin dihapus!"); return; }
+        
+        let count = dataPR.filter(p => p.kat === val).length;
+        if(count > 0) {
+            if(!confirm("Kategori ini berisi " + count + " produk. Jika dihapus, produk akan kehilangan kategori. Lanjutkan?")) return;
+        } else {
+            if(!confirm("Hapus kategori '" + val + "'?")) return;
+        }
+
+        dataKT = dataKT.filter(k => k !== val);
+        dataPR.forEach(p => { if(p.kat === val) p.kat = ""; });
+        refresh();
+        alert("Kategori dihapus.");
+    }
+
+    // FORM ACTIONS
+    document.getElementById('formTransaksi').onsubmit = (e) => {
+        e.preventDefault();
+        const p = dataPR.find(x => x.id == document.getElementById('inpProduk').value);
+        const idx = document.getElementById('editTrIdx').value;
+        const obj = { prodID: p.id, item: p.nama, sumber: p.sumber, beli: p.isManual ? parseInt(document.getElementById('manualBeli').value) : p.beli, jual: p.isManual ? parseInt(document.getElementById('manualJual').value) : p.jual, tujuan: document.getElementById('inpTujuan').value, metode: document.getElementById('inpMetode').value, date: document.getElementById('trTgl').value };
+        if(idx === "") dataTR.push(obj); else dataTR[idx] = obj;
+        resetFormTr(); refresh();
+    };
+
+    document.getElementById('formBelanjaBarang').onsubmit = (e) => {
+        e.preventDefault();
+        const p = dataPR.find(x => x.id == document.getElementById('bljProduk').value);
+        dataBL.push({ prodID: p.id, item: p.nama, qty: parseInt(document.getElementById('bljQty').value), sumber: document.getElementById('bljSumber').value, total: parseInt(document.getElementById('bljTotal').value), date: new Date().toISOString() });
+        e.target.reset(); refresh();
+    };
+
+    document.getElementById('formService').onsubmit = (e) => {
+        e.preventDefault();
+        dataSV.push({ nama: document.getElementById('svNama').value, tgl: document.getElementById('svTgl').value || new Date().toISOString(), unit: document.getElementById('svUnit').value, rusak: document.getElementById('svRusak').value, beli: parseInt(document.getElementById('svBeli').value)||0, jual: parseInt(document.getElementById('svJual').value) });
+        e.target.reset(); refresh();
+    };
+
+    document.getElementById('formHutang').onsubmit = (e) => {
+        e.preventDefault();
+        dataHT.push({ nama: document.getElementById('hNama').value.toUpperCase(), nominal: parseInt(document.getElementById('hNominal').value), jenis: document.getElementById('hJenis').value, ket: document.getElementById('hKet').value, date: new Date().toISOString() });
+        e.target.reset(); refresh();
+    };
+
+    document.getElementById('formProduk').onsubmit = (e) => {
+        e.preventDefault(); const idx = document.getElementById('editPrIdx').value;
+        const obj = { id: idx === "" ? "P" + Date.now() : dataPR[idx].id, nama: document.getElementById('pNama').value, kat: document.getElementById('pKat').value, sumber: document.getElementById('pSumber').value, beli: parseInt(document.getElementById('pBeli').value), jual: parseInt(document.getElementById('pJual').value), stok: parseInt(document.getElementById('pStok').value), isManual: document.getElementById('pIsManual').checked };
+        if(idx === "") dataPR.push(obj); else dataPR[idx] = obj; resetFormPr(); refresh();
+    };
+
+    // UTILS
+    function bayarDirect(tempIdx) {
+        const item = window.tempHutangList[tempIdx];
+        const nominalBayar = prompt(`Bayar ${item.nama}\nSisa: Rp ${item.nominal.toLocaleString()}\n\nMasukkan Jumlah:`, item.nominal);
+        if(!nominalBayar) return;
+        const sisa = item.nominal - parseInt(nominalBayar);
+        if(item.type === 'MANUAL') { if(sisa <= 0) dataHT.splice(item.originIdx, 1); else dataHT[item.originIdx].nominal = sisa; }
+        else { if(sisa <= 0) dataTR[item.originIdx].metode = 'CASH'; else { dataTR[item.originIdx].jual = sisa; dataTR[item.originIdx].metode = 'CICIL'; } }
+        refresh();
+    }
+
+    function checkKat(el) { if(el.value === "NEW") { let n = prompt("Nama Kategori Baru:"); if(n) dataKT.push(n.toUpperCase()); refresh(); el.value = n ? n.toUpperCase() : ""; } }
+    function loadTr(i) { const t = dataTR[i]; document.getElementById('editTrIdx').value = i; document.getElementById('inpProduk').value = t.prodID; document.getElementById('trTgl').value = t.date; document.getElementById('inpTujuan').value = t.tujuan; document.getElementById('inpMetode').value = t.metode; toggleManualPrice(); document.getElementById('btnSubmitTr').innerText = "UPDATE"; document.getElementById('btnCancelTr').style.display = "block"; }
+    function resetFormTr() { document.getElementById('formTransaksi').reset(); document.getElementById('editTrIdx').value = ""; document.getElementById('trTgl').value = new Date().toISOString().split('T')[0]; document.getElementById('btnSubmitTr').innerText = "SIMPAN TRANSAKSI"; document.getElementById('btnCancelTr').style.display = "none"; }
+    function loadPr(i) { const p = dataPR[i]; document.getElementById('editPrIdx').value = i; document.getElementById('pNama').value = p.nama; document.getElementById('pKat').value = p.kat; document.getElementById('pSumber').value = p.sumber; document.getElementById('pBeli').value = p.beli; document.getElementById('pJual').value = p.jual; document.getElementById('pStok').value = p.stok; document.getElementById('pIsManual').checked = p.isManual; document.getElementById('btnSubmitPr').innerText = "UPDATE"; document.getElementById('btnCancelPr').style.display = "block"; }
+    function resetFormPr() { document.getElementById('formProduk').reset(); document.getElementById('editPrIdx').value = ""; document.getElementById('btnSubmitPr').innerText = "SIMPAN PRODUK"; document.getElementById('btnCancelPr').style.display = "none"; }
+    function toggleManualPrice() { const p = dataPR.find(x => x.id == document.getElementById('inpProduk').value); document.getElementById('areaManual').style.display = (p && p.isManual) ? 'block' : 'none'; }
+    function editSaldoDirect(s) { let n = prompt("Edit Saldo "+s+":", localStorage.getItem(DB_V+'S_'+s)||0); if (n !== null) { localStorage.setItem(DB_V+'S_'+s, parseInt(n)); refresh(); } }
+    function topUp(s) { let n = prompt("Tambah Saldo "+s+":"); if(n) { localStorage.setItem(DB_V+'S_'+s, (parseInt(localStorage.getItem(DB_V+'S_'+s))||0)+parseInt(n)); refresh(); } }
+    function save() { for(let k in keys) localStorage.setItem(keys[k], JSON.stringify(eval('data'+k))); }
+    function hapus(k, i) { if(confirm("Hapus data?")) { if(k==='TR') dataTR.splice(i,1); if(k==='PR') dataPR.splice(i,1); if(k==='SV') dataSV.splice(i,1); if(k==='BL') dataBL.splice(i,1); refresh(); } }
+    function filterMaster() { let inp = document.getElementById('searchPr').value.toLowerCase(); let trs = document.getElementById('listMaster').getElementsByTagName('tr'); for(let r of trs) r.style.display = r.innerText.toLowerCase().includes(inp) ? '' : 'none'; }
+    
+    function calcLaba() {
+        const now = new Date(); const startWeek = new Date(now); startWeek.setDate(now.getDate() - now.getDay()); const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        let m=0, b=0; let html = '<table class="table table-sm"><thead><tr><th>Item</th><th>Laba</th></tr></thead><tbody>';
+        let combined = [...dataTR.map(t => ({...t, type: 'TR'})), ...dataSV.map(s => ({...s, item: 'SVC: '+s.unit, beli: s.beli, jual: s.jual, type: 'SV'}))];
+        combined.forEach(x => {
+            const d = new Date(x.date || x.tgl); const untung = (parseInt(x.jual)||0) - (parseInt(x.beli)||0);
+            if(d >= startWeek) m += untung;
+            if(d >= startMonth) { b += untung; html += `<tr><td>${x.item}</td><td class="text-end text-success">+${untung.toLocaleString()}</td></tr>`; }
+        });
+        document.getElementById('labaM').innerText = m.toLocaleString();
+        document.getElementById('labaB').innerText = b.toLocaleString();
+        document.getElementById('listLabaDetil').innerHTML = html + '</tbody></table>';
+    }
+
+    function exportToExcel() {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataTR), "Transaksi");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataPR), "Produk");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataHT), "Hutang");
+        XLSX.writeFile(wb, `Backup_RulzCell_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function importFromExcel() {
+        const file = document.getElementById('importFile').files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            if(workbook.Sheets['Transaksi']) dataTR = XLSX.utils.sheet_to_json(workbook.Sheets['Transaksi']);
+            if(workbook.Sheets['Produk']) dataPR = XLSX.utils.sheet_to_json(workbook.Sheets['Produk']);
+            if(workbook.Sheets['Hutang']) dataHT = XLSX.utils.sheet_to_json(workbook.Sheets['Hutang']);
+            refresh(); alert("Import Selesai!");
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    window.onload = () => { refresh(); document.getElementById('trTgl').value = new Date().toISOString().split('T')[0]; };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
